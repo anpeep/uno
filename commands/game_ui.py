@@ -45,6 +45,7 @@ class GameUI:
             "wildCardColorSelection": {}
         }
 
+
     async def handle_start(self, interaction: discord.Interaction):
         if self.initiator is not None:
             await interaction.response.send_message(
