@@ -1,8 +1,10 @@
 import os
 import random
 import sys
+from typing import List, Union, Dict
 
 from application.types import GameCheat
+from common.types import Player
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
@@ -18,14 +20,14 @@ def shuffle(array):
     return array
 
 
-def create_cards() -> list[dict[str, str | int]]:
+def create_cards() -> List[Dict[str, Union[str, int]]]:
     colors = ["Blue", "Green", "Red", "Yellow"]
     faces = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Skip", "Reverse", "Draw Two"]
     wild_faces = ["Wild", "Wild Draw Four"]
     cards = []
 
-    def add_card(color: str, face: str):
-        cards.append({"color": color, "face": face, "id": len(cards)})
+    def add_card(clr: str, fc: str):
+        cards.append({"color": clr, "face": fc, "id": len(cards)})
 
     for color in colors:
         for face in faces:
@@ -184,10 +186,8 @@ class GameLogic:
             return {"error": "Not the player's turn"}
         if player.get("hasPlayedCard"):
             return {"error": "Player has already played a card"}
-
         self.draw_cards(player, 1)
         player["hasPlayedCard"] = True
-
         self.next_turn()
         return {"data": None}
 
@@ -195,7 +195,6 @@ class GameLogic:
         player = next((p for p in self.game_state["players"] if p["id"] == player_id), None)
         if not player:
             raise ValueError("Player not found")
-
         return len(player["hand"]) == 0
 
     def say_uno(self, player_id: str) -> dict:
@@ -211,9 +210,6 @@ class GameLogic:
 
         player["hasSaidUno"] = True
         return {"data": None}
-
-
-
 
     def activate_cheat_code(self, player_id: str, game_cheat: GameCheat) -> dict:
         if not self.game_state["players"]:
@@ -236,7 +232,7 @@ class GameLogic:
 
         return {"data": None}
 
-    def draw_cards(self, player: dict, count: int) -> None:
+    def draw_cards(self, player: Player, count: int) -> None:
         for _ in range(count):
             if not self.game_state["deck"]:
                 self.game_state["deck"] = shuffle(self.game_state["discard"][:-1])
@@ -246,17 +242,13 @@ class GameLogic:
 
             if self.game_state["deck"]:
                 card = self.game_state["deck"].pop()
-                player["hand"].append(card)
+                player.hand.append(card)
 
-    def get_next_player(self) -> dict:
+    def get_next_player(self) ->  Player:
         players = self.game_state["players"]
         if not players:
             raise ValueError("No players in the game")
-
         current_index = self.game_state["currentPlayerIndex"]
         player_count = len(players)
-
-        next_index = (current_index - 1 + player_count) % player_count if self.game_state["isReversed"] else (
-                                                                                                                         current_index + 1) % player_count
-
-        return players[next_index]
+        next_index = (current_index - 1 + player_count) % player_count if self.game_state["isReversed"] else (current_index + 1) % player_count
+        return self.game_state[next_index]
